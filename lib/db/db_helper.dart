@@ -34,12 +34,7 @@ class DbHelper {
     String databasePath = await getDatabasesPath();
     String path = join(databasePath, 'note_db');
 
-    return await openDatabase(
-      path,
-      version: 2,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-    );
+    return await openDatabase(path, version: 1, onCreate: _onCreate);
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -56,17 +51,6 @@ class DbHelper {
         "$columnTaskIsCompleted INTEGER,"
         "$columnTaskReminder TEXT)";
     await db.execute(sqlTask);
-  }
-
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      var sqlTask =
-          "CREATE TABLE $tableTask($columnTaskId INTEGER PRIMARY KEY AUTOINCREMENT,"
-          "$columnTaskTitle TEXT,"
-          "$columnTaskIsCompleted INTEGER,"
-          "$columnTaskReminder TEXT)";
-      await db.execute(sqlTask);
-    }
   }
 
   Future<int?> saveNote(Note note) async {
