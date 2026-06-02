@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_uts/db/db_helper.dart';
 import 'package:project_uts/model/task.dart';
 import 'package:project_uts/utils/note_colors.dart';
 import 'package:project_uts/ui/task_form_sheet.dart';
@@ -11,14 +12,44 @@ class TugasPage extends StatefulWidget {
 }
 
 class _TugasPageState extends State<TugasPage> {
-  // Local list of tasks
+  // Database instance and task list
   final List<Task> tasks = [];
+  final DbHelper db = DbHelper();
+
+  @override
+  void initState() {
+    super.initState();
+    _getAllTasks();
+  }
+
+  // Load all tasks from SQLite database
+  Future<void> _getAllTasks() async {
+    var list = await db.getAllTask();
+    if (mounted) {
+      setState(() {
+        tasks.clear();
+        list?.forEach((taskMap) {
+          tasks.add(Task.fromMap(taskMap));
+        });
+      });
+    }
+  }
 
   // Format date helper
   String formatDateTime(DateTime dateTime) {
     List<String> months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agt',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     String day = dateTime.day.toString().padLeft(2, '0');
     String month = months[dateTime.month - 1];
@@ -37,18 +68,16 @@ class _TugasPageState extends State<TugasPage> {
     );
 
     if (result != null && mounted) {
-      setState(() {
-        if (taskToEdit != null) {
-          taskToEdit.title = result['title'];
-          taskToEdit.reminder = result['reminder'];
-        } else {
-          tasks.add(Task(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            title: result['title'],
-            reminder: result['reminder'],
-          ));
-        }
-      });
+      if (taskToEdit != null) {
+        taskToEdit.title = result['title'];
+        taskToEdit.reminder = result['reminder'];
+        await db.updateTask(taskToEdit);
+      } else {
+        await db.saveTask(
+          Task(title: result['title'], reminder: result['reminder']),
+        );
+      }
+      _getAllTasks();
     }
   }
 
@@ -59,27 +88,22 @@ class _TugasPageState extends State<TugasPage> {
       decoration: BoxDecoration(
         color: NoteColors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0x05000000),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Row(
         children: [
           // Checklist button
           GestureDetector(
-            onTap: () {
-              setState(() {
-                task.isCompleted = !task.isCompleted;
-              });
+            onTap: () async {
+              task.isCompleted = !task.isCompleted;
+              await db.updateTask(task);
+              _getAllTasks();
             },
             child: Container(
               margin: const EdgeInsets.only(right: 14),
               child: Icon(
-                task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                task.isCompleted
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
                 color: task.isCompleted ? NoteColors.greyText : NoteColors.ui,
                 size: 24,
               ),
@@ -98,8 +122,12 @@ class _TugasPageState extends State<TugasPage> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: task.isCompleted ? NoteColors.greyText : NoteColors.black,
-                      decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                      color: task.isCompleted
+                          ? NoteColors.greyText
+                          : NoteColors.black,
+                      decoration: task.isCompleted
+                          ? TextDecoration.lineThrough
+                          : null,
                     ),
                   ),
                   if (task.reminder != null) ...[
@@ -146,11 +174,14 @@ class _TugasPageState extends State<TugasPage> {
                 actions: [
                   TextButton(
                     child: const Text('Ya'),
-                    onPressed: () {
-                      setState(() {
-                        tasks.removeWhere((t) => t.id == task.id);
-                      });
-                      Navigator.pop(context);
+                    onPressed: () async {
+                      if (task.id != null) {
+                        await db.deleteTask(task.id!);
+                      }
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
+                      _getAllTasks();
                     },
                   ),
                   TextButton(
@@ -162,28 +193,18 @@ class _TugasPageState extends State<TugasPage> {
                 ],
               );
 
-              showDialog(
-                context: context,
-                builder: (context) => hapus,
-              );
+              showDialog(context: context, builder: (context) => hapus);
             },
             borderRadius: BorderRadius.circular(8),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 6,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
                 color: NoteColors.ui,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Row(
                 children: [
-                  Icon(
-                    Icons.delete,
-                    size: 10,
-                    color: NoteColors.white,
-                  ),
+                  Icon(Icons.delete, size: 10, color: NoteColors.white),
                   SizedBox(width: 4),
                   Text(
                     'Hapus',
@@ -211,11 +232,7 @@ class _TugasPageState extends State<TugasPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.task_alt,
-              size: 64,
-              color: Color(0x4D9E9E9E),
-            ),
+            Icon(Icons.task_alt, size: 64, color: Color(0x4D9E9E9E)),
             SizedBox(height: 16),
             Text(
               'Belum ada tugas',
@@ -267,7 +284,12 @@ class _TugasPageState extends State<TugasPage> {
           children: [
             // Title
             const Padding(
-              padding: EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: 8.0),
+              padding: EdgeInsets.only(
+                left: 16.0,
+                right: 16.0,
+                top: 16.0,
+                bottom: 8.0,
+              ),
               child: Text(
                 'Tugas',
                 style: TextStyle(
@@ -278,9 +300,7 @@ class _TugasPageState extends State<TugasPage> {
               ),
             ),
             // Task List
-            Expanded(
-              child: _buildTaskList(),
-            ),
+            Expanded(child: _buildTaskList()),
           ],
         ),
       ),
@@ -288,11 +308,7 @@ class _TugasPageState extends State<TugasPage> {
         onPressed: () => _showTaskForm(context),
         backgroundColor: NoteColors.ui,
         elevation: 2,
-        child: const Icon(
-          Icons.add,
-          color: NoteColors.white,
-          size: 28,
-        ),
+        child: const Icon(Icons.add, color: NoteColors.white, size: 28),
       ),
     );
   }
