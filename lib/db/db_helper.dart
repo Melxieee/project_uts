@@ -87,8 +87,6 @@ class DbHelper {
     );
   }
 
-  // --- Task DB Operations ---
-
   Future<int?> saveTask(Task task) async {
     var dbClient = await _db;
     return await dbClient!.insert(tableTask, task.toMap());

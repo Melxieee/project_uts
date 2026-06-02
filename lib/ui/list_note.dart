@@ -5,7 +5,7 @@ import 'package:project_uts/ui/detail_note.dart';
 import 'package:project_uts/utils/note_colors.dart';
 
 import 'form_note.dart';
-import 'package:project_uts/ui/tugas_page.dart';
+import 'package:project_uts/ui/list_task.dart';
 
 class ListNotePage extends StatefulWidget {
   const ListNotePage({super.key});
@@ -123,11 +123,16 @@ class _ListNoteState extends State<ListNotePage> {
                       onTap: () => {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => DetailNote(note)),
+                          MaterialPageRoute(
+                            builder: (context) => DetailNote(note),
+                          ),
                         ),
                       },
                       child: Container(
-                        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        margin: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                         padding: EdgeInsets.all(18),
                         decoration: BoxDecoration(
                           color: NoteColors.white,
@@ -203,7 +208,9 @@ class _ListNoteState extends State<ListNotePage> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: NoteColors.ui, //
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: const Row(
                                           children: [
@@ -282,7 +289,9 @@ class _ListNoteState extends State<ListNotePage> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: NoteColors.ui,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
                                         child: const Row(
                                           children: [
@@ -346,11 +355,7 @@ class _ListNoteState extends State<ListNotePage> {
               onPressed: () => _openFormCreate(),
               backgroundColor: NoteColors.ui,
               elevation: 2,
-              child: const Icon(
-                Icons.add,
-                color: NoteColors.white,
-                size: 28,
-              ),
+              child: const Icon(Icons.add, color: NoteColors.white, size: 28),
             )
           : null,
     );
